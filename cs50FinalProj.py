@@ -57,6 +57,9 @@ stop_button = tkinter.Button(window, text="stop", command = breakLoop)
 stop_button.grid(column=1,row=1)
 
 
+# initialize what points we'll be tracking in mediapipe. dictionary of dictionaries will let us track what we want efficiently
+trackedPoints = {"left_shoulder": {"mpIndex": 11}, "right_shoulder": {"mpIndex": 12}, "left_wrist": {"mpIndex": 15}, "right_wrist": {"mpIndex": 16}}
+
 # Initialize synth stuff
 synth = pyfluidsynth.Synth()
 sfid = synth.sfload('/usr/share/sounds/sf2/FluidR3_GM.sf2')
@@ -110,7 +113,7 @@ dt = sympy.symbols('dt')
 A = sympy.Matrix([[1,0,dt,0],[0,1,0,dt],[0,0,1,0],[0,0,0,1]])
 H = np.array([[1,0,0,0],[0,1,0,0]])
 '''
-x, P, R, Q, A, H = genNXYVelMats(4)
+x, P, R, Q, A, H = genNXYVelMats(len(trackedPoints))
 
 kalmFilt = kalmanFilt(x,P,R,Q,A,H)
 
