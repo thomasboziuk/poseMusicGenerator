@@ -58,7 +58,18 @@ stop_button.grid(column=1,row=1)
 
 
 # initialize what points we'll be tracking in mediapipe. dictionary of dictionaries will let us track what we want efficiently
-trackedPoints = {"left_shoulder": {"mpIndex": 11}, "right_shoulder": {"mpIndex": 12}, "left_wrist": {"mpIndex": 15}, "right_wrist": {"mpIndex": 16}}
+mpKeys = {11: "left_shoulder", 12: "right_shoulder", 15: "left_wrist", 16: "right_wrist"}
+trackedPoints = {"left_shoulder": {}, "right_shoulder": {}, "left_wrist": {}, "right_wrist": {}}
+
+# each position will have two dictionary entries: "meas", an (X,Y) tuple, and "est", an (X, X dot, Y, Y dot) tuple.
+# may possibly add acceleration later
+
+#set up another useful dict
+kalmKeys = {}
+jj = 0
+for ii in trackedPoints:
+  kalmKeys[ii] = jj
+  jj += 1
 
 # Initialize synth stuff
 synth = pyfluidsynth.Synth()
@@ -102,23 +113,8 @@ mp_drawing_styles = mp.solutions.drawing_styles
 mp_pose = mp.solutions.pose
 
 # Initialize the Kalman filter settings
-'''
-old, manual way. new way follows
-
-x = np.array([0.5,0.5,0.1,0.1])
-P = np.array([[.1**2,0,0,0],[0,.1**2,0,0],[0,0,.05**2,0],[0,0,0,.05**2]])
-R = np.array([[.1**2,0],[0,.1**2]])
-Q = np.array([[.5,0,0,0],[0,.5,0,0],[0,0,.1,0],[0,0,0,.1]])
-dt = sympy.symbols('dt')
-A = sympy.Matrix([[1,0,dt,0],[0,1,0,dt],[0,0,1,0],[0,0,0,1]])
-H = np.array([[1,0,0,0],[0,1,0,0]])
-'''
 x, P, R, Q, A, H = genNXYVelMats(len(trackedPoints))
-
 kalmFilt = kalmanFilt(x,P,R,Q,A,H)
-
-
-
 
 # For webcam input:
 cap = cv2.VideoCapture(0)
@@ -163,20 +159,18 @@ with mp_pose.Pose(
                               'Visibility': data_point.visibility,
                               })
 
-      shoulderx1 = keypoints[11]['X']
-      shoulderx2 = keypoints[12]['X']
-      shouldery1 = keypoints[11]['Y']
-      shouldery2 = keypoints[12]['Y']
-      leftHandx = keypoints[15]['X']
-      leftHandy = keypoints[15]['Y']
-      rightHandx = keypoints[16]['X']
-      rightHandy = keypoints[16]['Y']
+      for ii in mpKeys:
+        trackedPoints[mpKeys[ii]]['meas'] = keypoints[ii]['X'], keypoints[ii]['Y']
+      #print(trackedPoints)
+
 
       # Update Kalman Filter using new measurement
       currTime = time()
       timestep = currTime - lastTime
       lastTime = currTime
-      kalm_pos = kalmFilt.update(np.array([shoulderx1,shouldery1,shoulderx2,shouldery2,leftHandx,leftHandy,rightHandx,rightHandy]), timestep)
+      # a little silly but I've changed the data structues. accessing the measurements, casting to an array, and reshaping to provide to Kalman
+      currMeas = np.array([trackedPoints[x]['meas'] for x in trackedPoints]).reshape(1,8)[0]
+      kalm_pos = kalmFilt.update(currMeas, timestep)
 
 
     else:
@@ -189,7 +183,7 @@ with mp_pose.Pose(
       kalm_pos = kalmFilt.propogate(timestep)
     
     # adjust synth value and bend tone based on x/y locations of shoulders
-    #UPDATE TO KALMAN VALUES
+    #UPDATE TO KALMAN VALUES AND DICTIONARY STUFF
       
     shoulderx1 = kalm_pos[0]
     shoulderx2 = kalm_pos[2]
@@ -201,7 +195,7 @@ with mp_pose.Pose(
     v_shoulder_2 = kalm_pos[10:12]
     leftHandVel = (kalm_pos[12]**2 + kalm_pos[13]**2)**.5
     rightHandVel = (kalm_pos[14]**2 + kalm_pos[15]**2)**.5
-    print(shoulderx1, shouldery1, v_shoulder_1, shoulderx2, shouldery2, v_shoulder_2, leftHandVel, rightHandVel)
+    #print(shoulderx1, shouldery1, v_shoulder_1, shoulderx2, shouldery2, v_shoulder_2, leftHandVel, rightHandVel)
     
     height,width,channels = image.shape
     # kalman filter can propogate beyond desired range, so we will cap it here
@@ -231,7 +225,7 @@ with mp_pose.Pose(
     synth.cc(3,11,int(abs(v_shoulder_2[1])*600+30))
 
     # drum channels play if the time has been over one second and the velocity is above threshold
-    # TODO: ONLY HAPPENS IF HAND IN FRAME
+    # TODO: ONLY HAPPENS IF HAND IN FRAME, or limit the number of hits, or something, this can get unweildy
     percussion_sensitivity = w1.get() / 100
     if leftHandVel > percussion_sensitivity and currTime > leftHandTime + 0.5:
       synth.noteon(4,40,80)
