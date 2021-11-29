@@ -25,7 +25,7 @@ current_inst = tkinter.StringVar(window)
 current_inst.set("Select an Instrument")
 
 w1 = tkinter.Scale(window, from_=0, to=20)
-w1.set(15)
+w1.set(10)
 w1.grid(column=2, row=1)
 
 def setCurrentInst(*args):
@@ -161,7 +161,7 @@ with mp_pose.Pose(
 
       for ii in mpKeys:
         trackedPoints[mpKeys[ii]]['meas'] = keypoints[ii]['X'], keypoints[ii]['Y']
-      #print(trackedPoints)
+      print(trackedPoints)
 
 
       # Update Kalman Filter using new measurement
@@ -183,54 +183,43 @@ with mp_pose.Pose(
       kalm_pos = kalmFilt.propogate(timestep)
     
     # adjust synth value and bend tone based on x/y locations of shoulders
-    #UPDATE TO KALMAN VALUES AND DICTIONARY STUFF
-      
-    shoulderx1 = kalm_pos[0]
-    shoulderx2 = kalm_pos[2]
-    shouldery1 = kalm_pos[1]
-    shouldery2 = kalm_pos[3]
-    
 
-    v_shoulder_1 = kalm_pos[8:10]
-    v_shoulder_2 = kalm_pos[10:12]
-    leftHandVel = (kalm_pos[12]**2 + kalm_pos[13]**2)**.5
-    rightHandVel = (kalm_pos[14]**2 + kalm_pos[15]**2)**.5
-    #print(shoulderx1, shouldery1, v_shoulder_1, shoulderx2, shouldery2, v_shoulder_2, leftHandVel, rightHandVel)
+    # put returned kalman values into better structure
+    for ii in trackedPoints:
+      trackedPoints[ii].update(X = kalm_pos[kalmKeys[ii]], Y = kalm_pos[kalmKeys[ii] + 1], X_dot = kalm_pos[kalmKeys[ii] + 8], Y_dot = kalm_pos[kalmKeys[ii] + 9])
+      trackedPoints[ii].update(V = (trackedPoints[ii]['X_dot']**2 + trackedPoints[ii]['Y_dot']**2)**0.5)
+      # kalman filter can propogate beyond desired range, so we will cap it here
+      if trackedPoints[ii]['X'] > 1:
+        trackedPoints[ii]['X'] = 1
+      if trackedPoints[ii]['Y'] > 1:
+        trackedPoints[ii]['Y'] = 1
     
     height,width,channels = image.shape
-    # kalman filter can propogate beyond desired range, so we will cap it here
-    if shoulderx1 > 1:
-      shoulderx1 = 1
-    if shouldery1 > 1:
-      shouldery1 = 1
-    if shoulderx2 > 1:
-      shoulderx2 = 1
-    if shouldery2 > 1:
-      shouldery2 = 1
+
     image = cv2.circle(image,(int(kalm_pos[0]*width),int(kalm_pos[1]*height)),3,thickness=1,color=(0,255,0))
     image = cv2.circle(image,(int(kalm_pos[2]*width),int(kalm_pos[3]*height)),3,thickness=1,color=(0,255,0))
     image = cv2.circle(image,(int(kalm_pos[4]*width),int(kalm_pos[5]*height)),3,thickness=1,color=(0,255,0))
     image = cv2.circle(image,(int(kalm_pos[6]*width),int(kalm_pos[7]*height)),3,thickness=1,color=(0,255,0))
     
     # bends happen here
-    synth.pitch_bend(0,int(shoulderx1*16000-8000))
-    synth.pitch_bend(1,int(shouldery1*16000-8000))
-    synth.pitch_bend(2,int(shoulderx2*16000-8000))
-    synth.pitch_bend(3,int(shouldery2*16000-8000))
+    synth.pitch_bend(0,int(trackedPoints['left_shoulder']['X']*16000-8000))
+    synth.pitch_bend(1,int(trackedPoints['left_shoulder']['Y']*16000-8000))
+    synth.pitch_bend(2,int(trackedPoints['right_shoulder']['X']*16000-8000))
+    synth.pitch_bend(3,int(trackedPoints['right_shoulder']['Y']*16000-8000))
 
     # velocity (from kalman estimator) is used to scale volume
-    synth.cc(0,11,int(abs(v_shoulder_1[0])*600+30))
-    synth.cc(1,11,int(abs(v_shoulder_1[1])*600+30))
-    synth.cc(2,11,int(abs(v_shoulder_2[0])*600+30))
-    synth.cc(3,11,int(abs(v_shoulder_2[1])*600+30))
+    synth.cc(0,11,int(abs(trackedPoints['left_shoulder']['X_dot'])*600+30))
+    synth.cc(1,11,int(abs(trackedPoints['left_shoulder']['Y_dot'])*600+30))
+    synth.cc(2,11,int(abs(trackedPoints['right_shoulder']['X_dot'])*600+30))
+    synth.cc(3,11,int(abs(trackedPoints['right_shoulder']['Y_dot'])*600+30))
 
     # drum channels play if the time has been over one second and the velocity is above threshold
     # TODO: ONLY HAPPENS IF HAND IN FRAME, or limit the number of hits, or something, this can get unweildy
     percussion_sensitivity = w1.get() / 100
-    if leftHandVel > percussion_sensitivity and currTime > leftHandTime + 0.5:
+    if trackedPoints['left_wrist']['V'] > percussion_sensitivity and currTime > leftHandTime + 0.5 and trackedPoints['left_wrist']['X'] <= 1 and trackedPoints['left_wrist']['Y'] <= 1:
       synth.noteon(4,40,80)
       leftHandTime = currTime
-    if rightHandVel > percussion_sensitivity and currTime > rightHandTime + 0.25:
+    if trackedPoints['right_wrist']['V']  > percussion_sensitivity and currTime > rightHandTime + 0.25 and trackedPoints['right_wrist']['X'] <= 1 and trackedPoints['right_wrist']['Y'] <= 1:
       synth.noteon(5,80,80)
       rightHandTime = currTime
 
