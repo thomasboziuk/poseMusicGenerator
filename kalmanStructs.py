@@ -72,11 +72,11 @@ def genNXYVelAccelMats(NP, sigma_P = .1, sigma_P_dot = 0.05, sigma_P_dot_dot = 0
     m = 2 * NP
     dt = sympy.symbols('dt')
 
-    x = np.concatenate((0.5*np.ones((1,m)), 0.1*np.ones((1,m)), , 0.05*np.ones((1,m))), axis = 1)[0]
+    x = np.concatenate((0.5*np.ones((1,m)), 0.1*np.ones((1,m)), 0.05*np.ones((1,m))), axis = 1)[0]
     P = np.diag(np.concatenate((sigma_P*np.ones((1,m)), sigma_P_dot*np.ones((1,m)), sigma_P_dot_dot*np.ones((1,m))), axis = 1)[0])
     R = sigma_R * np.eye(m)
     Q = np.diag(np.concatenate((sigma_Q*np.ones((1,m)), sigma_Q_dot*np.ones((1,m)), sigma_Q_dot_dot*np.ones((1,m))), axis = 1)[0])
-    A = sympy.eye(m).row_join(dt * sympy.eye(m)).row_join(1/2 *dt**2 * sympy.eye(m)).col_join(sympy.zeros(m).row_join(sympy.eye(m)).row_join(dt * sympy.eye(m))).col_join(sympy.zeros(m).row_join(sympy.zeros(m)).row_joint(sympy.eye(m)))
+    A = sympy.eye(m).row_join(dt * sympy.eye(m)).row_join(1/2 *dt**2 * sympy.eye(m)).col_join(sympy.zeros(m).row_join(sympy.eye(m)).row_join(dt * sympy.eye(m))).col_join(sympy.zeros(m).row_join(sympy.zeros(m)).row_join(sympy.eye(m)))
     H = np.eye(m,n)
 
     return x, P, R, Q, A, H
