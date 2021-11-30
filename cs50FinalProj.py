@@ -161,8 +161,8 @@ with mp_pose.Pose(
 
       for ii in mpKeys:
         trackedPoints[mpKeys[ii]]['meas'] = keypoints[ii]['X'], keypoints[ii]['Y']
-      print(trackedPoints)
-
+      #print(trackedPoints)
+      print([(key, value) for key, value in trackedPoints.items() if key.endswith("wrist")])
 
       # Update Kalman Filter using new measurement
       currTime = time()
@@ -186,7 +186,7 @@ with mp_pose.Pose(
 
     # put returned kalman values into better structure
     for ii in trackedPoints:
-      trackedPoints[ii].update(X = kalm_pos[kalmKeys[ii]], Y = kalm_pos[kalmKeys[ii] + 1], X_dot = kalm_pos[kalmKeys[ii] + 8], Y_dot = kalm_pos[kalmKeys[ii] + 9])
+      trackedPoints[ii].update(X = kalm_pos[kalmKeys[ii]*2], Y = kalm_pos[kalmKeys[ii]*2 + 1], X_dot = kalm_pos[kalmKeys[ii]*2 + 8], Y_dot = kalm_pos[kalmKeys[ii]*2 + 9])
       trackedPoints[ii].update(V = (trackedPoints[ii]['X_dot']**2 + trackedPoints[ii]['Y_dot']**2)**0.5)
       # kalman filter can propogate beyond desired range, so we will cap it here
       if trackedPoints[ii]['X'] > 1:
