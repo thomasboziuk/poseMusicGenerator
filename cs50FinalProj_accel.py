@@ -19,7 +19,7 @@ lbl.grid(column=0, row=0)
 style = tkinter.ttk.Style(window)
 style.theme_use('clam')
 
-inst_dict= {'Piano': 1, 'Guitar': 26, 'Synth Bass': 39, 'Strings': 49, 'Orchestra Hit': 56, 'Pan Flute': 76, 'Sitar': 105, 'Bag Pipe': 110}
+inst_dict= {'Piano': 1, 'Guitar': 27, 'Synth Bass': 39, 'Strings': 49, 'Orchestra Hit': 55, 'Pan Flute': 75, 'Sitar': 104, 'Bag Pipe': 109}
 inst_options = inst_dict.keys()
 current_inst = tkinter.StringVar(window)
 current_inst.set("Select an Instrument")
@@ -81,9 +81,13 @@ synth.program_select(2, sfid, 0, 49)
 synth.program_select(3, sfid, 0, 49)
 
 # some drum channels, using the synth drum, # 118
+# and some secondary percussion: reverse cymbal # 119; 
+# woodblock, #115
 
 synth.program_select(4, sfid, 0, 118)
 synth.program_select(5, sfid, 0, 118)
+synth.program_select(6, sfid, 0, 119)
+synth.program_select(7, sfid, 0, 115)
 sleep(1)
 
 # for getting everything set on ubuntu's sound management (may be different for other OSs)
@@ -123,8 +127,10 @@ with mp_pose.Pose(
     min_tracking_confidence=0.5) as pose:
 
   lastTime = time()
-  leftHandTime = time()
-  rightHandTime = time()
+  leftHandDownTime = time()
+  rightHandDownTime = time()
+  leftHandUpTime = time()
+  rightHandUpTime = time()
   while cap.isOpened():
     success, image = cap.read()
     if not success:
@@ -217,12 +223,18 @@ with mp_pose.Pose(
     # drum channels play if the time has been over one second and the velocity is above threshold
     # TODO: ONLY HAPPENS IF HAND IN FRAME, or limit the number of hits, or something, this can get unweildy
     percussion_sensitivity = w1.get() / 100
-    if trackedPoints['left_wrist']['V'] > percussion_sensitivity and currTime > leftHandTime + 0.5 and trackedPoints['left_wrist']['X'] <= 1 and trackedPoints['left_wrist']['Y'] <= 1:
+    if trackedPoints['left_wrist']['Y_dot_dot'] > 0 and trackedPoints['left_wrist']['Y_dot_dot'] > percussion_sensitivity and currTime > leftHandDownTime + 0.5 and trackedPoints['left_wrist']['X'] <= 1 and trackedPoints['left_wrist']['Y'] <= 1:
       synth.noteon(4,40,80)
-      leftHandTime = currTime
-    if trackedPoints['right_wrist']['V']  > percussion_sensitivity and currTime > rightHandTime + 0.25 and trackedPoints['right_wrist']['X'] <= 1 and trackedPoints['right_wrist']['Y'] <= 1:
+      leftHandDownTime = currTime
+    elif trackedPoints['left_wrist']['Y_dot_dot'] < 0 and abs(trackedPoints['left_wrist']['Y_dot_dot']) > percussion_sensitivity and currTime > leftHandUpTime + 0.5 and trackedPoints['left_wrist']['X'] <= 1 and trackedPoints['left_wrist']['Y'] <= 1:
+      synth.noteon(6,80,80)
+      leftHandDownTime = currTime
+    if trackedPoints['right_wrist']['Y_dot_dot'] > 0 and trackedPoints['right_wrist']['Y_dot_dot']  > percussion_sensitivity and currTime > rightHandDownTime + 0.25 and trackedPoints['right_wrist']['X'] <= 1 and trackedPoints['right_wrist']['Y'] <= 1:
       synth.noteon(5,80,80)
-      rightHandTime = currTime
+      rightHandDownTime = currTime
+    elif trackedPoints['right_wrist']['Y_dot_dot'] < 0 and abs(trackedPoints['right_wrist']['Y_dot_dot'])  > percussion_sensitivity and currTime > rightHandUpTime + 0.25 and trackedPoints['right_wrist']['X'] <= 1 and trackedPoints['right_wrist']['Y'] <= 1:
+      synth.noteon(7,80,80)
+      rightHandDownTime = currTime
 
     # update GUI with new picture
     guiImage = Image.fromarray(np.flip(cv2.flip(image,1), axis=-1))
