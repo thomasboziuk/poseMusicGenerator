@@ -1,0 +1,15 @@
+PIP3:
+jack-matchmaker
+mediapipe
+opencv-python
+mingus
+numpy
+sympy
+
+
+UBUNTU:
+python3-tkinter
+fluidsynth
+libfluidsynth-dev
+python3-pil.imagetk
+python3-pil
