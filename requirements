@@ -13,3 +13,24 @@ fluidsynth
 libfluidsynth-dev
 python3-pil.imagetk
 python3-pil
+
+NOTE:
+you will need to add the following to the pyfluidsynth.py, which is likely to
+be found in /home/$USER_NAME/.local/lib/python3.8/site-packages/mingus/midi/ :
+
+def pitch_wheel_sens(self, chan, val):
+    """Adjust pitch bend amount. Added manually by T. Boziuk
+    """
+    return fluid_synth_pitch_wheel_sens(self.synth, chan, val)
+
+and
+
+fluid_synth_pitch_wheel_sens = cfunc(
+"fluid_synth_pitch_wheel_sens",
+c_int,
+("synth", c_void_p, 1),
+("chan", c_int, 1),
+("val", c_int, 1),
+)
+
+in the appropriate spots.
