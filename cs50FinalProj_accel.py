@@ -180,13 +180,13 @@ with mp_pose.Pose(
 
 
     else:
-      # Use Kalman Filter to propogate state anyways
-      print('using kalman to propogate instead')
+      # Use Kalman Filter to propagate state anyways
+      print('using kalman to propagate instead')
       currTime = time()
       timestep = currTime - lastTime
       # we don't update last time because we don't have a measurement. that will only be updated with a measurement,
-      # to match the expected behavior for kalmanFilter.update versus kalmanFilter.propogate
-      kalm_pos = kalmFilt.propogate(timestep)
+      # to match the expected behavior for kalmanFilter.update versus kalmanFilter.propagate
+      kalm_pos = kalmFilt.propagate(timestep)
     
     # adjust synth value and bend tone based on x/y locations of shoulders
 
@@ -195,7 +195,7 @@ with mp_pose.Pose(
       trackedPoints[ii].update(X = kalm_pos[kalmKeys[ii]*2], Y = kalm_pos[kalmKeys[ii]*2 + 1], X_dot = kalm_pos[kalmKeys[ii]*2 + 8], Y_dot = kalm_pos[kalmKeys[ii]*2 + 9], X_dot_dot = kalm_pos[kalmKeys[ii]*2 + 16], Y_dot_dot = kalm_pos[kalmKeys[ii]*2 + 17])
       trackedPoints[ii].update(V = (trackedPoints[ii]['X_dot']**2 + trackedPoints[ii]['Y_dot']**2)**0.5)
       trackedPoints[ii].update(A = (trackedPoints[ii]['X_dot_dot']**2 + trackedPoints[ii]['Y_dot_dot']**2)**0.5)
-      # kalman filter can propogate beyond desired range, so we will cap it here
+      # kalman filter can propagate beyond desired range, so we will cap it here
       if trackedPoints[ii]['X'] > 1:
         trackedPoints[ii]['X'] = 1
       if trackedPoints[ii]['Y'] > 1:

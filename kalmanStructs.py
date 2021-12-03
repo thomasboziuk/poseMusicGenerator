@@ -120,9 +120,9 @@ class kalmanFilt:
         return self.x
 
 
-    def propogate(self, dt):
+    def propagate(self, dt):
         '''
-        propogate the state forward by timestep dt.
+        propagate the state forward by timestep dt.
         returns a new state but does not change parameters or update current state estimate.
         you will need to account for that when passing in a future dt
         '''
