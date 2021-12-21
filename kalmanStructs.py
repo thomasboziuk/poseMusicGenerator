@@ -3,7 +3,7 @@ from sympy.utilities.lambdify import lambdify
 import numpy as np
 from numpy.linalg import inv
 
-def genNXYVelMats(NP, sigma_P = .1, sigma_P_dot = 0.05, sigma_R = 0.1, sigma_Q = 0.5, sigma_Q_dot = 0.1):
+def genNXYVelMats(NP, sigma_P = .1, sigma_P_dot = 0.05, sigma_R = 0.1, sigma_Q = 0.1, sigma_Q_dot = 0.1):
     '''
     This function will create and return the initial inputs for the class kalmanFilt.
     You simply need to pass it the number of points that will be measured.
@@ -41,7 +41,7 @@ def genNXYVelMats(NP, sigma_P = .1, sigma_P_dot = 0.05, sigma_R = 0.1, sigma_Q =
     return x, P, R, Q, A, H
 
 
-def genNXYVelAccelMats(NP, sigma_P = .1, sigma_P_dot = 0.05, sigma_P_dot_dot = 0.025, sigma_R = 0.1, sigma_Q = 0.5, sigma_Q_dot = 0.1, sigma_Q_dot_dot = 0.05):
+def genNXYVelAccelMats(NP, sigma_P = .1, sigma_P_dot = 0.05, sigma_P_dot_dot = 0.025, sigma_R = 0.1, sigma_Q = 0.1, sigma_Q_dot = 0.1, sigma_Q_dot_dot = 0.05):
     '''
     This function will create and return the initial inputs for the class kalmanFilt.
     You simply need to pass it the number of points that will be measured.
